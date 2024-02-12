@@ -1,6 +1,9 @@
 ﻿using Easyway.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Text;
 
@@ -8,9 +11,13 @@ namespace Easyway.Controllers
 {
     public class HomeController : Controller
     {
-        private string url = "https://localhost:7231/api/ContactApi";
-        private HttpClient client=new HttpClient();
-        
+        private readonly ContactDBContext contactDB;
+
+        public HomeController(ContactDBContext _contactDB)
+        {
+            contactDB = _contactDB;
+        }
+
         public IActionResult Index()
         {
             return View();
@@ -46,20 +53,32 @@ namespace Easyway.Controllers
         }
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult ContactUs(Contact conInfo)
+        [Authorize]
+        public IActionResult ContactUs(Contactinfo conInfo)
         {
-            string data = JsonConvert.SerializeObject(conInfo);
-            StringContent stringContent = new StringContent(data , Encoding.UTF8, "application/json");
-            Console.Write(stringContent);
-            HttpResponseMessage response = client.PostAsync(url,stringContent).Result;
-            if (response.IsSuccessStatusCode)
+            
+            try
             {
-                ViewBag.SuccessMessage = "Your message has been sent. Thank you!";
+                // Add contact info to the database
+                contactDB.Contactinfos.Add(conInfo);
+                contactDB.SaveChanges();
+
+                // Clear the model state and provide success message
                 ModelState.Clear();
-                //return RedirectToAction("ContactUs");
+                ViewBag.SuccessMessage = "Your message has been sent. Thank you!";
+            }
+            catch (Exception ex)
+            {
+                // Log the exception for debugging purposes
+                // You may also want to notify the user about the error
+                // For simplicity, I'm just logging the exception here
+                Console.WriteLine($"An error occurred: {ex.Message}");
+
+                // You can also return a specific error view if needed
             }
             return View();
         }
+
 
         public IActionResult Privacy()
         {
