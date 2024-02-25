@@ -64,8 +64,7 @@ namespace Easyway.Controllers
                 contactDB.SaveChanges();
 
                 // Clear the model state and provide success message
-                ModelState.Clear();
-                ViewBag.SuccessMessage = "Your message has been sent. Thank you!";
+               
             }
             catch (Exception ex)
             {
